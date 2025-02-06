@@ -1,35 +1,41 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { FaVolumeUp, FaVideo, FaLink, FaTimes, FaArrowRight } from "react-icons/fa";
+import { ClipLoader } from "react-spinners";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
 function App() {
     const [url, setUrl] = useState("");
-    const [downloadType, setDownloadType] = useState("video"); // Default: Video selected
+    const [downloadType, setDownloadType] = useState("video");
     const [loading, setLoading] = useState(false);
 
     const handleDownload = async () => {
         if (!url.trim()) {
-            alert("Please enter a valid YouTube URL!");
+            toast.error("Please enter a valid YouTube URL!");
             return;
         }
 
         setLoading(true);
-        try {
-            const response = await axios.post("http://localhost:5000/download", { url, type: downloadType }, { responseType: "blob" });
 
-            // Extract filename from Content-Disposition header
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/download",
+                { url, type: downloadType },
+                { responseType: "blob" }
+            );
+
             const contentDisposition = response.headers["content-disposition"];
-            let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`; // Default fallback
+            let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
 
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="(.+)"/);
                 if (match && match[1]) {
-                    fileName = match[1]; // Use the filename sent from the server
+                    fileName = match[1];
                 }
             }
 
-            // Create a downloadable link
             const blob = new Blob([response.data], { type: downloadType === "audio" ? "audio/mpeg" : "video/mp4" });
             const downloadUrl = URL.createObjectURL(blob);
 
@@ -41,21 +47,31 @@ function App() {
             document.body.removeChild(link);
 
             URL.revokeObjectURL(downloadUrl);
+            toast.success("Download complete!");
         } catch (error) {
             console.error("Error downloading:", error);
-            alert("Download failed. Please check the URL and try again.");
+            toast.error("Download failed. Please check the URL and try again.");
         }
+
         setLoading(false);
+    };
+
+    // Function to handle Enter key press
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            handleDownload();
+        }
     };
 
     return (
         <div className="container">
-            {/* Logo */}
+            {/* Toast container with bottom center position */}
+            <ToastContainer position="bottom-center" autoClose={3000} />
+
             <div className="logo-container">
                 <img src="/logo.png" alt="Logo" className="logo" />
             </div>
 
-            {/* Input Section */}
             <div className="input-container">
                 <FaLink className="icon link-icon" />
                 <input
@@ -64,6 +80,7 @@ function App() {
                     placeholder="Enter YouTube URL"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
+                    onKeyDown={handleKeyPress} // Added event listener for Enter key
                 />
                 {url && (
                     <button className="clear-btn" onClick={() => setUrl("")}>
@@ -71,11 +88,10 @@ function App() {
                     </button>
                 )}
                 <button className="submit-btn" onClick={handleDownload} disabled={loading}>
-                    <FaArrowRight />
+                    {loading ? <ClipLoader size={20} color="#ffffff" /> : <FaArrowRight />}
                 </button>
             </div>
 
-            {/* Selection Buttons */}
             <div className="toggle-group">
                 <button
                     className={`toggle-btn ${downloadType === "audio" ? "active" : ""}`}
