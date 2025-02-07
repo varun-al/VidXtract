@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -7,26 +7,30 @@ const path = require("path");
 
 const app = express();
 app.use(cors({
-    exposedHeaders: ["Content-Disposition"]  // Allow frontend to read Content-Disposition
+    exposedHeaders: ["Content-Disposition"]
 }));
 app.use(bodyParser.json());
 
-// Function to sanitize filenames
 const sanitizeFilename = (title) => title.replace(/[<>:"/\\|?*]+/g, "").trim();
-const maxLength = 50; // Limit filename length
+const maxLength = 50;
+
+let downloadProgress = 0; // Store progress globally
 
 app.post("/download", async (req, res) => {
     const { url, type } = req.body;
     const format = type === "audio" ? "bestaudio" : "bv+ba/b";
-    const ytDlpPath = "yt-dlp"; // Ensure yt-dlp is installed globally
+    const ytDlpPath = "yt-dlp";
 
-    exec(`${ytDlpPath} --get-title "${url}"`, (error, stdout, stderr) => {
-        if (error) {
-            console.error("Failed to fetch title:", stderr);
-            return res.status(500).json({ error: "Failed to get video title" });
-        }
+    // Get video title
+    const titleProcess = spawn(ytDlpPath, ["--get-title", url]);
 
-        const videoTitle = sanitizeFilename(stdout.trim());
+    let videoTitle = "";
+    titleProcess.stdout.on("data", (data) => {
+        videoTitle += data.toString();
+    });
+
+    titleProcess.on("close", () => {
+        videoTitle = sanitizeFilename(videoTitle.trim());
         const truncatedTitle = videoTitle.length > maxLength ? videoTitle.substring(0, maxLength) + "..." : videoTitle;
         const fileName = `${truncatedTitle}.${type === "audio" ? "mp3" : "mp4"}`;
         const filePath = path.join(__dirname, "downloads", fileName);
@@ -35,27 +39,40 @@ app.post("/download", async (req, res) => {
             fs.mkdirSync("./downloads");
         }
 
-        const command = `${ytDlpPath} -f "${format}" --merge-output-format mp4 -o "${filePath}" "${url}"`;
+        // Spawn yt-dlp with progress
+        const command = [
+            "-f", format,
+            "--merge-output-format", "mp4",
+            "-o", filePath,
+            "--progress-template", "%(progress._percent_str)s", // Output only percentage
+            url
+        ];
 
-        exec(command, { maxBuffer: 1024 * 1024 * 100 }, (error, stdout, stderr) => {
-            if (error) {
-                console.error("yt-dlp error:", stderr);
-                return res.status(500).json({ error: "Download failed" });
+        const downloadProcess = spawn(ytDlpPath, command);
+
+        downloadProcess.stdout.on("data", (data) => {
+            const progressMatch = data.toString().match(/(\d+(\.\d+)?)%/); // Extract numeric percentage
+            if (progressMatch) {
+                downloadProgress = parseFloat(progressMatch[1]);
             }
-
-            console.log(`✅ Download complete: ${fileName}`);
-            console.log(`📄 Sending Content-Disposition: attachment; filename="${fileName}"`);
-
-            // Set proper headers
-            res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
-            res.setHeader("Content-Type", type === "audio" ? "audio/mpeg" : "video/mp4");
-
-            res.sendFile(filePath, (err) => {
-                if (err) console.error("Error sending file:", err);
-                fs.unlinkSync(filePath); // Delete file after sending
-            });
         });
+
+        downloadProcess.stderr.on("data", (data) => {
+            console.error("Error:", data.toString());
+        });
+
+        downloadProcess.on("close", () => {
+            console.log(`✅ Download complete: ${fileName}`);
+            downloadProgress = 100; // Mark completion
+        });
+
+        res.json({ message: "Download started!" });
     });
+});
+
+// Progress API
+app.get("/progress", (req, res) => {
+    res.json({ progress: downloadProgress });
 });
 
 app.listen(5000, () => console.log("✅ Server running on port 5000 🚀"));

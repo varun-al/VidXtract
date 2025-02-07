@@ -10,11 +10,28 @@ function App() {
     const [url, setUrl] = useState("");
     const [downloadType, setDownloadType] = useState("video");
     const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     const isValidYoutubeUrl = (url) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
         return regex.test(url);
     };
+
+    const checkProgress = () => {
+        axios.get("http://localhost:5000/progress").then((response) => {
+            setProgress(response.data.progress);
+            console.log(`Progress: ${response.data.progress}%`);
+            if (response.data.progress >= 100) {
+                toast.success("Download Completed!");
+                setLoading(false);
+                clearInterval(progressInterval);
+            }
+        }).catch(() => {
+            clearInterval(progressInterval);
+        });
+    };
+
+    let progressInterval;
 
     const handleDownload = async () => {
         if (!isValidYoutubeUrl(url.trim())) {
@@ -23,56 +40,23 @@ function App() {
         }
 
         setLoading(true);
+        setProgress(0);
 
         try {
-            const response = await axios.post(
-                "http://localhost:5000/download",
-                { url, type: downloadType },
-                { responseType: "blob" }
-            );
+            await axios.post("http://localhost:5000/download", { url, type: downloadType });
+            
+            // Start checking progress every second
+            progressInterval = setInterval(checkProgress, 1000);
 
-            let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
-            const contentDisposition = response.headers["content-disposition"];
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match && match[1]) {
-                    fileName = decodeURIComponent(match[1]);
-                }
-            }
-
-            const blob = new Blob([response.data], { type: downloadType === "audio" ? "audio/mpeg" : "video/mp4" });
-            const downloadUrl = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = downloadUrl;
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            URL.revokeObjectURL(downloadUrl);
-            toast.success("Download Started..!");
         } catch (error) {
-            toast.error("Download failed. Please check the URL and try again.");
-        }
-
-        setLoading(false);
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            handleDownload();
+            toast.error("Download failed. Please try again.");
+            setLoading(false);
         }
     };
-
-    const isMobile = window.innerWidth <= 768;
 
     return (
         <div className="container">
-            <ToastContainer
-                position={isMobile ? "top-center" : "bottom-center"}
-                autoClose={3000}
-            />
+            <ToastContainer position="bottom-center" autoClose={3000} />
 
             <div className="logo-container">
                 <img src="/logo.png" alt="Logo" className="logo" />
@@ -86,7 +70,6 @@ function App() {
                     placeholder="Enter YouTube URL"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    onKeyDown={handleKeyPress}
                 />
                 {url && (
                     <button className="clear-btn" onClick={() => setUrl("")}>
@@ -97,6 +80,13 @@ function App() {
                     {loading ? <ClipLoader size={20} color="#ffffff" /> : <FaArrowRight />}
                 </button>
             </div>
+
+            {/* Progress Bar */}
+            {loading && (
+                <div className="progress-bar-container">
+                    <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+                </div>
+            )}
 
             <div className="toggle-group">
                 <button
@@ -111,25 +101,6 @@ function App() {
                 >
                     <FaVideo className="icon-video" /> Video
                 </button>
-            </div>
-            <div
-                style={{
-                    textAlign: "center",
-                    marginTop: "20px",
-                    color: "#fff",
-                    fontSize: "14px",
-                    opacity: 0.7,
-                }}
-            >
-                This web-app is created by{" "}
-                <a
-                    href="https://github.com/varun-al"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#00aaff", textDecoration: "none" }}
-                >
-                    Varun A L
-                </a>
             </div>
         </div>
     );
