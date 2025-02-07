@@ -26,15 +26,24 @@ function App() {
                 { responseType: "blob" }
             );
 
-            const contentDisposition = response.headers["content-disposition"];
+            console.log("📩 Response headers:", response.headers);
+
+            // Extract filename from headers
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
+            const contentDisposition = response.headers["content-disposition"];
 
             if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
+                console.log("📄 Raw Content-Disposition:", contentDisposition);
+
+                // Improved regex to properly extract the filename
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+
                 if (match && match[1]) {
-                    fileName = match[1];
+                    fileName = decodeURIComponent(match[1]); // Decode filename
                 }
             }
+
+            console.log("✅ Final filename:", fileName);
 
             const blob = new Blob([response.data], { type: downloadType === "audio" ? "audio/mpeg" : "video/mp4" });
             const downloadUrl = URL.createObjectURL(blob);
@@ -47,9 +56,10 @@ function App() {
             document.body.removeChild(link);
 
             URL.revokeObjectURL(downloadUrl);
-            toast.success("Download complete!");
+            // toast.success(`Download complete: ${fileName}`);
+            toast.success(`Download Started..!`);
         } catch (error) {
-            console.error("Error downloading:", error);
+            console.error("❌ Error downloading:", error);
             toast.error("Download failed. Please check the URL and try again.");
         }
 
