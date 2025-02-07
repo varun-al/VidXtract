@@ -65,7 +65,6 @@ function App() {
         }
     };
 
-    const currentYear = new Date().getFullYear();
     const isMobile = window.innerWidth <= 768;
 
     return (
@@ -130,10 +129,8 @@ function App() {
                     style={{ color: "#00aaff", textDecoration: "none" }}
                 >
                     Varun A L
-                </a>{" "}
-                © {currentYear}
+                </a>
             </div>
-
         </div>
     );
 }
