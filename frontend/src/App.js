@@ -56,7 +56,6 @@ function App() {
             document.body.removeChild(link);
 
             URL.revokeObjectURL(downloadUrl);
-            // toast.success(`Download complete: ${fileName}`);
             toast.success(`Download Started..!`);
         } catch (error) {
             console.error("❌ Error downloading:", error);
@@ -66,17 +65,21 @@ function App() {
         setLoading(false);
     };
 
-    // Function to handle Enter key press
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
             handleDownload();
         }
     };
 
+    // Check if the current screen width is for mobile
+    const isMobile = window.innerWidth <= 768;
+
     return (
         <div className="container">
-            {/* Toast container with bottom center position */}
-            <ToastContainer position="bottom-center" autoClose={3000} />
+            <ToastContainer
+                position={isMobile ? "top-center" : "bottom-center"}
+                autoClose={3000}
+            />
 
             <div className="logo-container">
                 <img src="/logo.png" alt="Logo" className="logo" />
@@ -90,7 +93,7 @@ function App() {
                     placeholder="Enter YouTube URL"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    onKeyDown={handleKeyPress} // Added event listener for Enter key
+                    onKeyDown={handleKeyPress}
                 />
                 {url && (
                     <button className="clear-btn" onClick={() => setUrl("")}>
