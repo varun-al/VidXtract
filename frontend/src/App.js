@@ -11,8 +11,13 @@ function App() {
     const [downloadType, setDownloadType] = useState("video");
     const [loading, setLoading] = useState(false);
 
+    const isValidYoutubeUrl = (url) => {
+        const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+        return regex.test(url);
+    };
+
     const handleDownload = async () => {
-        if (!url.trim()) {
+        if (!isValidYoutubeUrl(url.trim())) {
             toast.error("Please enter a valid YouTube URL!");
             return;
         }
@@ -26,24 +31,14 @@ function App() {
                 { responseType: "blob" }
             );
 
-            console.log("📩 Response headers:", response.headers);
-
-            // Extract filename from headers
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
             const contentDisposition = response.headers["content-disposition"];
-
             if (contentDisposition) {
-                console.log("📄 Raw Content-Disposition:", contentDisposition);
-
-                // Improved regex to properly extract the filename
                 const match = contentDisposition.match(/filename="?([^"]+)"?/);
-
                 if (match && match[1]) {
-                    fileName = decodeURIComponent(match[1]); // Decode filename
+                    fileName = decodeURIComponent(match[1]);
                 }
             }
-
-            console.log("✅ Final filename:", fileName);
 
             const blob = new Blob([response.data], { type: downloadType === "audio" ? "audio/mpeg" : "video/mp4" });
             const downloadUrl = URL.createObjectURL(blob);
@@ -56,9 +51,8 @@ function App() {
             document.body.removeChild(link);
 
             URL.revokeObjectURL(downloadUrl);
-            toast.success(`Download Started..!`);
+            toast.success("Download Started..!");
         } catch (error) {
-            console.error("❌ Error downloading:", error);
             toast.error("Download failed. Please check the URL and try again.");
         }
 
@@ -71,7 +65,7 @@ function App() {
         }
     };
 
-    // Check if the current screen width is for mobile
+    const currentYear = new Date().getFullYear();
     const isMobile = window.innerWidth <= 768;
 
     return (
@@ -119,6 +113,27 @@ function App() {
                     <FaVideo className="icon-video" /> Video
                 </button>
             </div>
+            <div
+                style={{
+                    textAlign: "center",
+                    marginTop: "20px",
+                    color: "#fff",
+                    fontSize: "14px",
+                    opacity: 0.7,
+                }}
+            >
+                This web-app is created by{" "}
+                <a
+                    href="https://github.com/varun-al"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#00aaff", textDecoration: "none" }}
+                >
+                    Varun A L
+                </a>{" "}
+                © {currentYear}
+            </div>
+
         </div>
     );
 }

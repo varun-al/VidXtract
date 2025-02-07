@@ -43,14 +43,12 @@ body {
   position: relative;
 }
 
-/* Link Icon */
 .link-icon {
   color: white;
   margin-right: 10px;
   font-size: 18px;
 }
 
-/* Input Field */
 .input-box {
   flex: 1;
   background: transparent;
@@ -65,7 +63,6 @@ body {
   color: #666;
 }
 
-/* Clear Button */
 .clear-btn {
   background: transparent;
   border: none;
@@ -73,26 +70,31 @@ body {
   font-size: 18px;
   cursor: pointer;
   margin-right: 10px;
+  transition: color 0.3s;
 }
 
 .clear-btn:hover {
   color: white;
 }
 
-/* Submit Button */
 .submit-btn {
   background: transparent;
   border: none;
   color: white;
   font-size: 20px;
   cursor: pointer;
+  transition: color 0.3s;
 }
 
-.submit-btn:hover {
+.submit-btn:disabled {
+  cursor: not-allowed;
+  color: #666;
+}
+
+.submit-btn:hover:not(:disabled) {
   color: #ddd;
 }
 
-/* Toggle Button Group */
 .toggle-group {
   display: flex;
   background: #222;
@@ -103,7 +105,6 @@ body {
   width: 100%;
 }
 
-/* Toggle Buttons */
 .toggle-btn {
   display: flex;
   align-items: center;
@@ -120,73 +121,60 @@ body {
   flex: 1; /* Ensures buttons take equal space */
 }
 
-/* Active Button */
 .toggle-btn.active {
   background: white;
   color: black;
   font-weight: bold;
 }
 
-/* Audio Button */
 .icon-audio {
   color: #9333ea; /* Purple */
 }
 
-/* Video Button */
 .icon-video {
   color: #ff4444; /* Red */
 }
 
-/* Responsive Design */
 @media screen and (max-width: 768px) {
-  /* Main Container */
   .container {
     width: 90%;
     padding: 15px;
   }
 
-  /* Input Section */
   .input-container {
     padding: 10px;
-    max-width: 100%; /* Ensure proper scaling */
+    max-width: 100%;
   }
 
-  /* Toggle Button Group */
   .toggle-group {
     gap: 5px;
   }
 
-  /* Toggle Buttons */
   .toggle-btn {
     font-size: 14px;
   }
 }
 
 @media screen and (max-width: 480px) {
-  /* Main Container */
   .container {
     width: 90%;
     padding: 15px;
   }
 
-  /* Logo */
   .logo {
     width: 150px;
   }
 
-  /* Input Section */
   .input-container {
     padding: 8px;
-    max-width: 100%; /* Keep consistent with smaller screens */
+    max-width: 100%;
   }
 
-  /* Input Field */
   .input-box {
     font-size: 14px;
     padding: 4px;
   }
 
-  /* Buttons */
   .submit-btn,
   .clear-btn {
     width: auto;
@@ -197,10 +185,9 @@ body {
     font-size: 16px;
   }
 
-  /* Toggle Buttons */
   .toggle-btn {
     font-size: 12px;
     margin-top: 0px;
-    flex: 1; /* Ensures equal width for both buttons */
+    flex: 1;
   }
 }
