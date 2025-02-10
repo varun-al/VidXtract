@@ -1,21 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaVolumeUp, FaVideo, FaLink, FaTimes, FaArrowRight } from "react-icons/fa";
+import { io } from "socket.io-client";
+import { FaVolumeUp, FaVideo, FaList, FaLink, FaTimes, FaArrowRight } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { ToastContainer, toast } from "react-toastify";
+import { Tooltip } from "react-tooltip";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
+
+const socket = io("http://localhost:5000");
 
 function App() {
     const [url, setUrl] = useState("");
     const [downloadType, setDownloadType] = useState("video");
+    const [playlistMode, setPlaylistMode] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [progress, setProgress] = useState(0); // Progress state
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        socket.on("progressUpdate", ({ progress }) => {
+            console.log(`📡 Updating progress state: ${progress}%`);
+            setProgress((prev) => (prev === progress ? prev + 0.1 : progress));
+        });
+
+        return () => {
+            socket.off("progressUpdate");
+        };
+    }, []);
 
     const isValidYoutubeUrl = (url) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
         return regex.test(url);
     };
+
+    const isPlaylistUrl = (url) => url.includes("list=");
 
     const handleDownload = async () => {
         if (!isValidYoutubeUrl(url.trim())) {
@@ -24,19 +42,13 @@ function App() {
         }
 
         setLoading(true);
-        setProgress(0); // Reset progress before download
+        setProgress(0);
 
         try {
             const response = await axios.post(
                 "http://localhost:5000/download",
-                { url, type: downloadType },
-                {
-                    responseType: "blob",
-                    onDownloadProgress: (progressEvent) => {
-                        const percentage = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-                        setProgress(percentage); // Update progress
-                    },
-                }
+                { url, type: downloadType, playlist: playlistMode },
+                { responseType: "blob" }
             );
 
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
@@ -48,7 +60,9 @@ function App() {
                 }
             }
 
-            const blob = new Blob([response.data], { type: downloadType === "audio" ? "audio/mpeg" : "video/mp4" });
+            const blob = new Blob([response.data], {
+                type: downloadType === "audio" ? "audio/mpeg" : "video/mp4",
+            });
             const downloadUrl = URL.createObjectURL(blob);
 
             const link = document.createElement("a");
@@ -66,8 +80,9 @@ function App() {
             toast.error(errorMessage);
         }
 
+        setTimeout(() => setProgress(0), 500);
         setLoading(false);
-        setProgress(0); // Reset progress after download
+        setProgress(0);
     };
 
     const pasteFromClipboard = async () => {
@@ -94,17 +109,20 @@ function App() {
 
     return (
         <div className="container">
-            <ToastContainer
-                position={isMobile ? "top-center" : "bottom-center"}
-                autoClose={3000}
-            />
+            <ToastContainer position={isMobile ? "top-center" : "bottom-center"} autoClose={3000} />
 
             <div className="logo-container">
                 <img src="/logo.png" alt="Logo" className="logo" />
             </div>
 
             <div className="input-container">
-                <FaLink className="icon link-icon" onClick={pasteFromClipboard} />
+                <FaLink
+                    className="icon link-icon"
+                    onClick={pasteFromClipboard}
+                    data-tooltip-id="paste-tooltip"
+                    data-tooltip-content="Click to paste link"
+                />
+                <Tooltip id="paste-tooltip" place="top" effect="solid" />
                 <input
                     type="text"
                     className="input-box"
@@ -114,7 +132,13 @@ function App() {
                     onKeyDown={handleKeyPress}
                 />
                 {url && (
-                    <button className="clear-btn" onClick={() => setUrl("")}>
+                    <button
+                        className="clear-btn"
+                        onClick={() => {
+                            setUrl("");
+                            setPlaylistMode(false);
+                        }}
+                    >
                         <FaTimes />
                     </button>
                 )}
@@ -136,27 +160,27 @@ function App() {
                 >
                     <FaVideo className="icon-video" /> Video
                 </button>
+
+                {isPlaylistUrl(url) && (
+                    <button
+                        className={`toggle-btn ${playlistMode ? "active" : ""}`}
+                        data-tooltip-id="paste-tooltip"
+                        data-tooltip-content="Select to Download Playlist"
+                        onClick={() => setPlaylistMode(!playlistMode)}
+                    >
+                        <Tooltip id="paste-tooltip" place="top" effect="solid" />
+                        <FaList className="icon-playlist" /> Playlist
+                    </button>
+                )}
             </div>
 
-            {/* Progress Bar */}
             {loading && (
-                <div className="progress-bar-container">
-                    <div
-                        className="progress-bar-fill"
-                        style={{ width: `${progress}%` }}
-                    ></div>
+                <div className="progress-bar-container" style={{ display: progress > 0 ? "block" : "none" }}>
+                    <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
 
-            <div
-                style={{
-                    textAlign: "center",
-                    marginTop: "20px",
-                    color: "#fff",
-                    fontSize: "14px",
-                    opacity: 0.7,
-                }}
-            >
+            <div style={{ textAlign: "center", marginTop: "20px", color: "#fff", fontSize: "14px", opacity: 0.7 }}>
                 This web-app is created by{" "}
                 <a
                     href="https://github.com/varun-al"
