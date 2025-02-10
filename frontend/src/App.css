@@ -95,6 +95,7 @@ body {
   color: #ddd;
 }
 
+/* Toggle Button Group */
 .toggle-group {
   display: flex;
   background: #222;
@@ -133,6 +134,19 @@ body {
 
 .icon-video {
   color: #ff4444; /* Red */
+}
+
+.icon-playlist {
+  color: #22cc88; /* Green */
+}
+
+/* Playlist Button Visibility */
+.toggle-btn.playlist {
+  display: none; /* Initially hidden */
+}
+
+.toggle-btn.playlist.visible {
+  display: flex; /* Show the button when a playlist is detected */
 }
 
 @media screen and (max-width: 768px) {

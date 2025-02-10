@@ -10,6 +10,7 @@ function App() {
     const [url, setUrl] = useState("");
     const [downloadType, setDownloadType] = useState("video");
     const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState(0); // Progress state
 
     const isValidYoutubeUrl = (url) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
@@ -23,12 +24,19 @@ function App() {
         }
 
         setLoading(true);
+        setProgress(0); // Reset progress before download
 
         try {
             const response = await axios.post(
                 "http://localhost:5000/download",
                 { url, type: downloadType },
-                { responseType: "blob" }
+                {
+                    responseType: "blob",
+                    onDownloadProgress: (progressEvent) => {
+                        const percentage = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                        setProgress(percentage); // Update progress
+                    },
+                }
             );
 
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
@@ -51,12 +59,15 @@ function App() {
             document.body.removeChild(link);
 
             URL.revokeObjectURL(downloadUrl);
-            toast.success("Download Started..!");
+            toast.success("Download Started!");
         } catch (error) {
-            toast.error("Download failed. Please check the URL and try again.");
+            const errorMessage =
+                error.response?.data?.error || "Download failed. Please check the URL and try again.";
+            toast.error(errorMessage);
         }
 
         setLoading(false);
+        setProgress(0); // Reset progress after download
     };
 
     const pasteFromClipboard = async () => {
@@ -72,7 +83,6 @@ function App() {
             toast.error("Failed to access clipboard. Please allow permissions.");
         }
     };
-
 
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
@@ -127,6 +137,17 @@ function App() {
                     <FaVideo className="icon-video" /> Video
                 </button>
             </div>
+
+            {/* Progress Bar */}
+            {loading && (
+                <div className="progress-bar-container">
+                    <div
+                        className="progress-bar-fill"
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
+            )}
+
             <div
                 style={{
                     textAlign: "center",
