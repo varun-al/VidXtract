@@ -8,7 +8,7 @@ import { Tooltip } from "react-tooltip";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
-const socket = io("http://localhost:5000");
+const socket = io("http://localhost:5000"); // Ensure this matches your backend server
 
 function App() {
     const [url, setUrl] = useState("");
@@ -18,9 +18,11 @@ function App() {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        socket.on("progressUpdate", ({ progress }) => {
-            console.log(`📡 Updating progress state: ${progress}%`);
-            setProgress((prev) => (prev === progress ? prev + 0.1 : progress));
+        socket.on("progressUpdate", ({ progress: newProgress }) => {
+            console.log(`📡 Progress Update Received from Backend: ${newProgress}%`); // Debugging
+
+            // Directly update progress without skipping values
+            setProgress(newProgress);
         });
 
         return () => {
@@ -42,13 +44,16 @@ function App() {
         }
 
         setLoading(true);
-        setProgress(0);
+        setProgress(0); // Reset progress
 
         try {
             const response = await axios.post(
                 "http://localhost:5000/download",
                 { url, type: downloadType, playlist: playlistMode },
-                { responseType: "blob" }
+                {
+                    responseType: "blob",
+                    headers: { "socket-id": socket.id },
+                }
             );
 
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
@@ -80,9 +85,7 @@ function App() {
             toast.error(errorMessage);
         }
 
-        setTimeout(() => setProgress(0), 500);
-        setLoading(false);
-        setProgress(0);
+        setTimeout(() => setLoading(false), 1000); // Slight delay to make UI smooth
     };
 
     const pasteFromClipboard = async () => {
@@ -147,6 +150,15 @@ function App() {
                 </button>
             </div>
 
+            {loading && (
+                <div className="progress-bar-container">
+
+                    <div className="progress-bar">
+                        <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+            )}
+
             <div className="toggle-group">
                 <button
                     className={`toggle-btn ${downloadType === "audio" ? "active" : ""}`}
@@ -173,12 +185,6 @@ function App() {
                     </button>
                 )}
             </div>
-
-            {loading && (
-                <div className="progress-bar-container" style={{ display: progress > 0 ? "block" : "none" }}>
-                    <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
-                </div>
-            )}
 
             <div style={{ textAlign: "center", marginTop: "20px", color: "#fff", fontSize: "14px", opacity: 0.7 }}>
                 This web-app is created by{" "}
