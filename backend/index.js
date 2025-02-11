@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -31,8 +31,6 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => console.log("🔌 Client disconnected"));
 });
 
-const { spawn } = require("child_process");
-
 app.post("/download", async (req, res) => {
     const { url, type, playlist } = req.body;
     const format = type === "audio" ? "bestaudio" : "bv+ba/b";
@@ -41,22 +39,29 @@ app.post("/download", async (req, res) => {
 
     io.to(socketId).emit("progressUpdate", { progress: 0, message: "Initializing download..." });
 
-    console.log("🔄 Downloading video...");
+    if (playlist) {
+        console.log("📂 Playlist detected. Downloading all videos...");
+        
+        // Get playlist title
+        let playlistTitle = "Playlist";
+        try {
+            const { stdout } = await execPromise(`${ytDlpPath} --print "%(playlist_title)s" "${url}"`);
+            playlistTitle = sanitizeFilename(stdout.split("\n")[0].trim()).slice(0, maxLength);
+        } catch (err) {
+            console.warn("⚠️ Failed to fetch playlist title. Using default name.");
+        }        
 
-    exec(`${ytDlpPath} --get-title "${url}"`, (error, stdout) => {
-        if (error) return res.status(500).json({ error: "Failed to get video title" });
+        const playlistFolder = path.join(downloadsDir, playlistTitle);
+        if (!fs.existsSync(playlistFolder)) fs.mkdirSync(playlistFolder);
 
-        const videoTitle = sanitizeFilename(stdout.trim()).slice(0, maxLength);
-        const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
-        const extension = type === "audio" ? "mp3" : "mp4";
-        const fileName = `${videoTitle}-${uniqueSuffix}.${extension}`;
-        const filePath = path.join(downloadsDir, fileName);
-
+        const outputTemplate = path.join(playlistFolder, `%(playlist_index)02d-%(title)s.%(ext)s`);
+        
         const ytDlpArgs = [
             "-f", format,
             ...extraOptions.split(" "),
-            "-o", filePath,
+            "-o", outputTemplate,
             url,
+            "--yes-playlist",
             "--newline"
         ];
 
@@ -77,18 +82,85 @@ app.post("/download", async (req, res) => {
             console.log("⚠️ yt-dlp stderr:", data.toString().trim());
         });
 
-        process.on("close", (code) => {
+        process.on("close", async (code) => {
             if (code === 0) {
-                io.to(socketId).emit("progressUpdate", { progress: 100, message: "Download complete!" });
-                res.download(filePath, fileName, (err) => {
-                    if (err) console.error("Error sending file:", err);
-                    fs.unlinkSync(filePath);
+                const zipPath = path.join(downloadsDir, `${playlistTitle}.zip`);
+                const output = fs.createWriteStream(zipPath);
+                const archive = archiver("zip", { zlib: { level: 9 } });
+
+                output.on("close", () => {
+                    console.log(`✅ ZIP file created: ${zipPath}`);
+                    io.to(socketId).emit("progressUpdate", { progress: 100, message: "Download complete!" });
+                    res.download(zipPath, `${playlistTitle}.zip`, (err) => {
+                        if (err) console.error("Error sending ZIP:", err);
+                        fs.unlinkSync(zipPath);
+                        fs.rmSync(playlistFolder, { recursive: true, force: true });
+                    });
                 });
+
+                archive.on("error", (err) => res.status(500).json({ error: err.message }));
+
+                archive.pipe(output);
+                archive.directory(playlistFolder, false);
+                archive.finalize();
             } else {
-                res.status(500).json({ error: "Download failed" });
+                res.status(500).json({ error: "Playlist download failed" });
             }
         });
-    });
+
+    } else {
+        console.log("🎥 Downloading single video...");
+
+        exec(`${ytDlpPath} --no-playlist --get-title "${url}"`, (error, stdout) => {
+            if (error) return res.status(500).json({ error: "Failed to get video title" });
+        
+            const videoTitle = sanitizeFilename(stdout.trim()).slice(0, maxLength);
+            const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
+            const extension = type === "audio" ? "mp3" : "mp4";
+            const fileName = `${videoTitle}-${uniqueSuffix}.${extension}`;
+            const filePath = path.join(downloadsDir, fileName);
+        
+            const cleanedUrl = url.split("&list=")[0]; // ✅ Removes `list=...`
+        
+            const ytDlpArgs = [
+                "--no-playlist", // ✅ Ensures it's a single video
+                "-f", format,
+                ...extraOptions.split(" "),
+                "-o", filePath,
+                cleanedUrl, // ✅ Use cleaned URL without playlist
+                "--newline"
+            ];
+        
+            const process = spawn(ytDlpPath, ytDlpArgs);
+        
+            process.stdout.on("data", (data) => {
+                const output = data.toString().trim();
+                console.log("🔹 yt-dlp stdout:", output);
+        
+                const progressMatch = output.match(/(\d{1,3}(\.\d+)?)%/);
+                if (progressMatch) {
+                    const progress = parseFloat(progressMatch[1]);
+                    io.to(socketId).emit("progressUpdate", { progress });
+                }
+            });
+        
+            process.stderr.on("data", (data) => {
+                console.log("⚠️ yt-dlp stderr:", data.toString().trim());
+            });
+        
+            process.on("close", (code) => {
+                if (code === 0) {
+                    io.to(socketId).emit("progressUpdate", { progress: 100, message: "Download complete!" });
+                    res.download(filePath, fileName, (err) => {
+                        if (err) console.error("Error sending file:", err);
+                        fs.unlinkSync(filePath);
+                    });
+                } else {
+                    res.status(500).json({ error: "Download failed" });
+                }
+            });
+        });        
+    }
 });
 
 const execPromise = (command) => {
