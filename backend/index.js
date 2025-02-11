@@ -6,13 +6,9 @@ const fs = require("fs");
 const path = require("path");
 const archiver = require("archiver");
 const http = require("http");
-const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] }
-});
 
 app.use(cors({ exposedHeaders: ["Content-Disposition"] }));
 app.use(bodyParser.json());
@@ -26,22 +22,60 @@ const isPlaylistUrl = (url) => url.includes("list=");
 const sanitizeFilename = (title) => title.replace(/[<>:"/\\|?*\n]+/g, "").trim();
 const maxLength = 50;
 
-io.on("connection", (socket) => {
-    console.log("🔌 Client connected to WebSocket");
-    socket.on("disconnect", () => console.log("🔌 Client disconnected"));
-});
-
 app.post("/download", async (req, res) => {
     const { url, type, playlist } = req.body;
     const format = type === "audio" ? "bestaudio" : "bv+ba/b";
     const extraOptions = type === "audio" ? "--extract-audio --audio-format mp3 --audio-quality 0" : "--merge-output-format mp4";
-    const socketId = req.headers["socket-id"];
 
-    io.to(socketId).emit("progressUpdate", { progress: 0, message: "Initializing download..." });
+    // Check if the URL is from Instagram
+    const isInstagramReels = url.includes("instagram.com/reel/");
 
-    if (playlist) {
+    if (isInstagramReels) {
+        console.log("📸 Instagram Reel detected. Downloading reel...");
+
+        exec(`${ytDlpPath} --no-playlist --get-title "${url}"`, (error, stdout) => {
+            if (error) return res.status(500).json({ error: "Failed to get Instagram reel title" });
+
+            const reelTitle = sanitizeFilename(stdout.trim()).slice(0, maxLength);
+            const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
+            const extension = type === "audio" ? "mp3" : "mp4";
+            const fileName = `${reelTitle}-${uniqueSuffix}.${extension}`;
+            const filePath = path.join(downloadsDir, fileName);
+
+            const ytDlpArgs = [
+                "--no-playlist", // Ensures it's a single video
+                "-f", format,
+                ...extraOptions.split(" "),
+                "-o", filePath,
+                url, // Instagram URL
+                "--newline"
+            ];
+
+            const process = spawn(ytDlpPath, ytDlpArgs);
+
+            process.stdout.on("data", (data) => {
+                const output = data.toString().trim();
+                console.log("🔹 yt-dlp stdout:", output);
+            });
+
+            process.stderr.on("data", (data) => {
+                console.log("⚠️ yt-dlp stderr:", data.toString().trim());
+            });
+
+            process.on("close", (code) => {
+                if (code === 0) {
+                    res.download(filePath, fileName, (err) => {
+                        if (err) console.error("Error sending file:", err);
+                        fs.unlinkSync(filePath);
+                    });
+                } else {
+                    res.status(500).json({ error: "Instagram reel download failed" });
+                }
+            });
+        });
+    } else if (playlist) {
         console.log("📂 Playlist detected. Downloading all videos...");
-        
+
         // Get playlist title
         let playlistTitle = "Playlist";
         try {
@@ -70,12 +104,6 @@ app.post("/download", async (req, res) => {
         process.stdout.on("data", (data) => {
             const output = data.toString().trim();
             console.log("🔹 yt-dlp stdout:", output);
-
-            const progressMatch = output.match(/(\d{1,3}(\.\d+)?)%/);
-            if (progressMatch) {
-                const progress = parseFloat(progressMatch[1]);
-                io.to(socketId).emit("progressUpdate", { progress });
-            }
         });
 
         process.stderr.on("data", (data) => {
@@ -90,7 +118,6 @@ app.post("/download", async (req, res) => {
 
                 output.on("close", () => {
                     console.log(`✅ ZIP file created: ${zipPath}`);
-                    io.to(socketId).emit("progressUpdate", { progress: 100, message: "Download complete!" });
                     res.download(zipPath, `${playlistTitle}.zip`, (err) => {
                         if (err) console.error("Error sending ZIP:", err);
                         fs.unlinkSync(zipPath);
@@ -107,7 +134,6 @@ app.post("/download", async (req, res) => {
                 res.status(500).json({ error: "Playlist download failed" });
             }
         });
-
     } else {
         console.log("🎥 Downloading single video...");
 
@@ -136,12 +162,6 @@ app.post("/download", async (req, res) => {
             process.stdout.on("data", (data) => {
                 const output = data.toString().trim();
                 console.log("🔹 yt-dlp stdout:", output);
-        
-                const progressMatch = output.match(/(\d{1,3}(\.\d+)?)%/);
-                if (progressMatch) {
-                    const progress = parseFloat(progressMatch[1]);
-                    io.to(socketId).emit("progressUpdate", { progress });
-                }
             });
         
             process.stderr.on("data", (data) => {
@@ -150,7 +170,6 @@ app.post("/download", async (req, res) => {
         
             process.on("close", (code) => {
                 if (code === 0) {
-                    io.to(socketId).emit("progressUpdate", { progress: 100, message: "Download complete!" });
                     res.download(filePath, fileName, (err) => {
                         if (err) console.error("Error sending file:", err);
                         fs.unlinkSync(filePath);

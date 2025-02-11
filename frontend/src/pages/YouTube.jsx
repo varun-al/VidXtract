@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { io } from "socket.io-client";
 import { FaVolumeUp, FaVideo, FaList, FaLink, FaTimes, FaArrowRight } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { ToastContainer, toast } from "react-toastify";
@@ -9,27 +8,11 @@ import Sidebar from "../component/Sidebar"; // Import Sidebar
 import "react-toastify/dist/ReactToastify.css";
 import "./YouTube.css";
 
-const socket = io("http://localhost:5000"); // Ensure this matches your backend server
-
 function YouTube() {
     const [url, setUrl] = useState("");
     const [downloadType, setDownloadType] = useState("video");
     const [playlistMode, setPlaylistMode] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [progress, setProgress] = useState(0);
-
-    useEffect(() => {
-        socket.on("progressUpdate", ({ progress: newProgress }) => {
-            console.log(`📡 Progress Update Received from Backend: ${newProgress}%`); // Debugging
-
-            // Directly update progress without skipping values
-            setProgress(newProgress);
-        });
-
-        return () => {
-            socket.off("progressUpdate");
-        };
-    }, []);
 
     const isValidYoutubeUrl = (url) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
@@ -45,16 +28,12 @@ function YouTube() {
         }
 
         setLoading(true);
-        setProgress(0); // Reset progress
 
         try {
             const response = await axios.post(
                 "http://localhost:5000/download",
                 { url, type: downloadType, playlist: playlistMode },
-                {
-                    responseType: "blob",
-                    headers: { "socket-id": socket.id },
-                }
+                { responseType: "blob" }
             );
 
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
@@ -86,7 +65,7 @@ function YouTube() {
             toast.error(errorMessage);
         }
 
-        setTimeout(() => setLoading(false), 1000); // Slight delay to make UI smooth
+        setTimeout(() => setLoading(false), 1000);
     };
 
     const pasteFromClipboard = async () => {
@@ -113,7 +92,7 @@ function YouTube() {
 
     return (
         <div className="app-container">
-            <Sidebar /> {/* Sidebar added here */}
+            <Sidebar />
 
             <div className="container">
                 <ToastContainer position={isMobile ? "top-center" : "bottom-center"} autoClose={3000} />
@@ -154,15 +133,6 @@ function YouTube() {
                     </button>
                 </div>
 
-                {loading && (
-                    <div className="progress-bar-container">
-
-                        <div className="progress-bar">
-                            <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
-                        </div>
-                    </div>
-                )}
-
                 <div className="toggle-group">
                     <button
                         className={`toggle-btn ${downloadType === "audio" ? "active" : ""}`}
@@ -180,7 +150,7 @@ function YouTube() {
                     {isPlaylistUrl(url) && (
                         <button
                             className={`toggle-btn ${playlistMode ? "active" : ""}`}
-                            data-tooltip-id="playlist-tooltip" // Unique ID here
+                            data-tooltip-id="playlist-tooltip"
                             data-tooltip-content="Select to Download Playlist"
                             onClick={() => setPlaylistMode(!playlistMode)}
                         >
@@ -203,7 +173,6 @@ function YouTube() {
                 </div>
             </div>
         </div>
-
     );
 }
 
