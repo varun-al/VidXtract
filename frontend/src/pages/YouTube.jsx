@@ -31,7 +31,7 @@ function YouTube() {
 
         try {
             const response = await axios.post(
-                "http://localhost:5000/download",
+                "https://youtube-downloader-production-c138.up.railway.app/download",
                 { url, type: downloadType, playlist: playlistMode },
                 { responseType: "blob" }
             );
