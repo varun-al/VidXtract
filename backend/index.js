@@ -10,7 +10,7 @@ const http = require("http");
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors({ exposedHeaders: ["Content-Disposition"] }));
+app.use(cors({ origin: 'https://yt-dlr-vexy04.vercel.app/youtube',exposedHeaders: ["Content-Disposition"] }));
 app.use(bodyParser.json());
 
 const ytDlpPath = "yt-dlp";
