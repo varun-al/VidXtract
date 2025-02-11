@@ -1,0 +1,92 @@
+/* Default Sidebar (Desktop View) */
+.sidebar {
+    width: 80px;
+    height: 100vh;
+    background-color: #111;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Sidebar Sections */
+.sidebar-top, .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Sidebar Buttons */
+.action-btn, .nav-btn {
+    background: none;
+    border: none;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.2s ease-in-out, color 0.3s ease;
+    text-decoration: none;
+    width: 50px; /* Adjust width */
+    height: 50px; /* Adjust height */
+    border-radius: 10px; /* Rounded highlight */
+    position: relative;
+}
+
+/* Highlighted active button */
+.action-btn.active, .nav-btn.active {
+    color: black; /* Change text color */
+    background: white; /* Highlight color */
+    font-weight: bold;
+    border-radius: 10px; /* Rounded effect */
+}
+
+/* Icon text spacing */
+.action-btn span, .nav-btn span {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+/* Mobile View: Convert Sidebar into Bottom Navigation */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: 60px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-evenly;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        top: auto;
+    }
+
+    .sidebar-top, .sidebar-bottom {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-evenly;
+        align-items: center;
+    }
+
+    .action-btn, .nav-btn {
+        width: auto;
+        height: auto;
+        padding: 5px;
+        font-size: 12px;
+    }
+}
+
+/* Prevent content from overlapping the bottom navbar */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 70px;
+    }
+}
