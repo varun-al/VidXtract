@@ -40,7 +40,7 @@ const execPromise = (command) => {
     });
 };
 
-const cookiesPath = path.join(__dirname, "cookies.txt");
+const cookiesPath = path.join(__dirname, "youtube.com_cookies.txt");
 
 app.post("/download", async (req, res) => {
     const { url, type, playlist } = req.body;
