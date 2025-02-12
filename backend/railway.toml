@@ -1,5 +1,0 @@
-[build]
-nixpacksPkgs = ["curl", "ffmpeg"]
-
-[deploy]
-startCommand = "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod a+rx yt-dlp && mv yt-dlp /usr/local/bin/ && node index.js"
