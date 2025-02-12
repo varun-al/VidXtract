@@ -40,6 +40,8 @@ const execPromise = (command) => {
     });
 };
 
+const cookiesPath = path.join(__dirname, "cookies.txt");
+
 app.post("/download", async (req, res) => {
     const { url, type, playlist } = req.body;
     const format = type === "audio" ? "bestaudio" : "bv+ba/b";
@@ -93,7 +95,7 @@ app.post("/download", async (req, res) => {
         if (!fs.existsSync(playlistFolder)) fs.mkdirSync(playlistFolder);
 
         const outputTemplate = path.join(playlistFolder, `%(playlist_index)02d-%(title)s.%(ext)s`);
-        const ytDlpArgs = ["-f", format, ...extraOptions, "-o", outputTemplate, url, "--yes-playlist", "--newline","--cookies", "./cookies.txt",];
+        const ytDlpArgs = ["-f", format, ...extraOptions, "-o", outputTemplate, url, "--yes-playlist", "--newline","--cookies", cookiesPath];
         const process = spawn(ytDlpPath, ytDlpArgs);
 
         process.on("close", async (code) => {
@@ -138,7 +140,7 @@ app.post("/download", async (req, res) => {
             const fileName = `${videoTitle}-${uniqueSuffix}.${extension}`;
             const filePath = path.join(downloadsDir, fileName);
 
-            const ytDlpArgs = ["--no-playlist", "-f", format, ...extraOptions, "-o", filePath, url, "--newline","--cookies", "./cookies.txt",];
+            const ytDlpArgs = ["--no-playlist", "-f", format, ...extraOptions, "-o", filePath, url, "--newline","--cookies", cookiesPath,];
             const downloadProcess = spawn(ytDlpPath, ytDlpArgs);
 
             downloadProcess.on("close", (code) => {
