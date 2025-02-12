@@ -128,7 +128,10 @@ app.post("/download", async (req, res) => {
         });
 
         process.on("close", (code) => {
-            if (code !== 0) return res.status(500).json({ error: "Failed to get video title" });
+            if (code !== 0) {
+                console.error("Failed to get video title. Exit code:", code);
+                return res.status(500).json({ error: "Failed to get video title" });
+            }
 
             const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
             const extension = type === "audio" ? "mp3" : "mp4";
