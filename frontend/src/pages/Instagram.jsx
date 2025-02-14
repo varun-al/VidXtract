@@ -85,7 +85,7 @@ function Instagram() {
     const isMobile = window.innerWidth <= 768;
 
     return (
-        <div className="app-container">
+        <div className="ig-page">
             <Sidebar />
 
             <div className="container">

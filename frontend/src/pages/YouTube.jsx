@@ -91,7 +91,7 @@ function YouTube() {
     const isMobile = window.innerWidth <= 768;
 
     return (
-        <div className="app-container">
+        <div className="youtube-page">
             <Sidebar />
 
             <div className="container">
