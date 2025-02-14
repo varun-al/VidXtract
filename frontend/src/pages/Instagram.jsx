@@ -92,7 +92,7 @@ function Instagram() {
                 <ToastContainer position={isMobile ? "top-center" : "bottom-center"} autoClose={3000} />
 
                 <div className="logo-container">
-                    <img src="/logo.png" alt="Logo" className="logo" />
+                    <img src="/iglogo.png" alt="Logo" className="logo" />
                 </div>
 
                 <div className="input-container">

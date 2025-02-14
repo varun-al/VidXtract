@@ -71,3 +71,12 @@
     background: linear-gradient(to right, #00ffcc, #007bff);
     transition: width 0.4s ease-in-out;
 }
+
+  /* Logo */
+  .logo-container {
+    margin-bottom: 0px;
+  }
+  
+  .logo {
+    width: 300px;
+  }
