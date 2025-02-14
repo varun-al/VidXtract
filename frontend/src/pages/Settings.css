@@ -1,0 +1,184 @@
+/* Main container */
+.settings-container {
+    display: flex;
+    background-color: #111;
+    min-height: 100vh; /* Allows scrolling */
+    color: white;
+    overflow-x: hidden; /* Prevents horizontal scrolling */
+    width: 100%;
+}
+
+/* Ensure settings content scrolls */
+.settings-content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Enables scrolling */
+    margin-left: 80px; /* Adjust based on your sidebar width */
+    max-width: 100%; /* Prevents overflowing */
+    padding-bottom: 80px; /* Prevents content from being hidden behind the navbar */
+}
+
+/* Remove left margin on small screens */
+@media (max-width: 768px) {
+    .settings-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+}
+
+/* Notice about YouTube settings */
+.settings-notice {
+    background: #222;
+    color: #ffcc00;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    max-width: 600px;
+    text-align: center;
+}
+
+/* 🔹 Full-width container for settings sections */
+.settings-sections-container {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between; /* Pushes sections to the sides */
+    align-items: flex-start;
+    width: 100%; /* Full width */
+}
+
+/* 🔹 Sections */
+.settings-section {
+    background: #222;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 400px; /* Prevents sections from becoming too narrow */
+}
+
+/* 🔹 Desktop View: Full-width layout */
+@media (min-width: 1024px) {
+    .settings-sections-container {
+        flex-wrap: nowrap; /* Ensures side-by-side layout */
+        width: 100%; /* Covers the full screen */
+        margin: 0 auto; /* Keeps structure aligned */
+    }
+
+    .settings-section {
+        width: 50%; /* Ensures equal width for both sections */
+        min-width: auto;
+    }
+}
+
+/* 🔹 Mobile View: Stack sections */
+@media (max-width: 768px) {
+    .settings-sections-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .settings-section {
+        width: 90%; /* Makes sections full-width for better spacing */
+        min-width: auto;
+    }
+}
+
+/* Section Titles */
+.settings-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-transform: capitalize;
+}
+
+/* Button Groups */
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center; /* Center align the buttons */
+}
+
+/* Keep buttons in a grid-like structure */
+.button-group button {
+    background: #333;
+    border: none;
+    padding: 10px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    width: 30%; /* Ensures a compact layout instead of full width */
+    min-width: 90px;
+    text-align: center;
+}
+
+/* Prevent buttons from stretching full width on mobile */
+@media (max-width: 480px) {
+    .button-group {
+        justify-content: center; /* Ensures buttons are centered */
+        gap: 8px;
+    }
+
+    .button-group button {
+        width: 31%; /* Keeps them in 3 columns */
+        min-width: 80px;
+    }
+}
+
+/* Highlight selected button */
+.button-group button.selected {
+    background: white;
+    color: black;
+    font-weight: bold;
+    border: 2px solid white;
+    border-radius: 8px;
+}
+
+/* Button hover effect */
+.button-group button:hover {
+    background: white;
+    color: black;
+}
+
+/* Informational text */
+.info-text {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #bbb;
+    line-height: 1.5;
+    max-width: 600px;
+    text-align: center;
+}
+
+/* Ensure the bottom navbar stays fixed */
+.bottom-navbar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #111;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #333;
+    z-index: 100; /* Ensures it's above content */
+}
+
+/* Push settings content above navbar */
+.settings-content {
+    padding-bottom: 80px; /* Prevents content from being hidden under navbar */
+}
+
+.bottom-navbar a {
+    text-decoration: none;
+    color: white;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.bottom-navbar a.active {
+    color: #ffcc00;
+}

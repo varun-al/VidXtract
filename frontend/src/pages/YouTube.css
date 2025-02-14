@@ -1,5 +1,16 @@
 /* Global Styles */
-body {
+/* body {
+    background-color: black;
+    color: white;
+    font-family: "Arial", sans-serif;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  } */
+  .youtube-page{
     background-color: black;
     color: white;
     font-family: "Arial", sans-serif;
@@ -10,7 +21,6 @@ body {
     align-items: center;
     flex-direction: column;
   }
-  
   /* Main Container */
   .container {
     display: flex;

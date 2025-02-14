@@ -1,4 +1,17 @@
 /* Inherits most styles from YouTube.css */
+
+.ig-page{
+    background-color: black;
+    color: white;
+    font-family: "Arial", sans-serif;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
 .input-container {
     background: #111;
     border: 2px solid #888;
