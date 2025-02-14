@@ -1,7 +1,7 @@
 /* Main container */
 .settings-container {
     display: flex;
-    background-color: #111;
+    background-color: black;
     min-height: 100vh; /* Allows scrolling */
     color: white;
     overflow-x: hidden; /* Prevents horizontal scrolling */
