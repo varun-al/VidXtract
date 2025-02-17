@@ -34,29 +34,32 @@
     border-radius: 5px;
     font-size: 14px;
     margin-bottom: 20px;
-    max-width: 600px;
+    max-width: 100%; /* Allow notice to span full width */
     text-align: center;
 }
 
-/* 🔹 Full-width container for settings sections */
+/* Full-width container for settings sections */
 .settings-sections-container {
     display: flex;
     gap: 20px;
     justify-content: space-between; /* Pushes sections to the sides */
-    align-items: flex-start;
+    align-items: stretch; /* Ensures all child sections have the same height */
     width: 100%; /* Full width */
 }
 
-/* 🔹 Sections */
+/* Sections */
 .settings-section {
     background: #222;
     padding: 20px;
     border-radius: 10px;
     flex: 1;
     min-width: 400px; /* Prevents sections from becoming too narrow */
+    display: flex;
+    flex-direction: column; /* Ensures content aligns properly */
+    justify-content: space-between; /* Distributes content evenly */
 }
 
-/* 🔹 Desktop View: Full-width layout */
+/* Desktop View: Full-width layout */
 @media (min-width: 1024px) {
     .settings-sections-container {
         flex-wrap: nowrap; /* Ensures side-by-side layout */
@@ -70,7 +73,7 @@
     }
 }
 
-/* 🔹 Mobile View: Stack sections */
+/* Mobile View: Stack sections */
 @media (max-width: 768px) {
     .settings-sections-container {
         flex-direction: column;
@@ -146,9 +149,18 @@
     margin-top: 10px;
     font-size: 14px;
     color: #bbb;
-    line-height: 1.5;
+    line-height: 1.6;
     max-width: 600px;
-    text-align: center;
+    text-align: left; /* Default alignment for mobile */
+    padding: 0 10px; /* Add some horizontal padding */
+}
+
+/* Center align text in desktop view */
+@media (min-width: 1024px) {
+    .info-text {
+        text-align: center; /* Center alignment for desktop */
+        margin: 0 auto; /* Center horizontally */
+    }
 }
 
 /* Ensure the bottom navbar stays fixed */

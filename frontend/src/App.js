@@ -2,8 +2,9 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "./component/Sidebar";
 import YouTube from "./pages/YouTube";
-import Instagram from "./pages/Instagram"; // Create this later
-import Settings from "./pages/Settings"; // Create this later
+import Instagram from "./pages/Instagram";
+import Settings from "./pages/Settings";
+import Downloads from "./pages/DownloadPage"; // Corrected import
 import "./App.css";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
                         <Route path="/youtube" element={<YouTube />} />
                         <Route path="/instagram" element={<Instagram />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/downloads" element={<Downloads />} /> {/* Corrected path */}
                     </Routes>
                 </div>
             </div>

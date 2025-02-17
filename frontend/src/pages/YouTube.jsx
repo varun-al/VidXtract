@@ -39,7 +39,7 @@ function YouTube() {
             let fileName = `download.${downloadType === "audio" ? "mp3" : "mp4"}`;
             const contentDisposition = response.headers["content-disposition"];
             if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                const match = contentDisposition.match(/filename="?([^";]+)"?/);
                 if (match && match[1]) {
                     fileName = decodeURIComponent(match[1]);
                 }
