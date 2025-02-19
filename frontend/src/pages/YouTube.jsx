@@ -13,6 +13,7 @@ function YouTube() {
     const [downloadType, setDownloadType] = useState("video");
     const [playlistMode, setPlaylistMode] = useState(false);
     const [loading, setLoading] = useState(false);
+    // const [toastId, setToastId] = useState(null); // Store toast ID
 
     const isValidYoutubeUrl = (url) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
@@ -21,6 +22,51 @@ function YouTube() {
 
     const isPlaylistUrl = (url) => url.includes("list=");
 
+    const listenForProgress = (initializingToastId) => {
+        const eventSource = new EventSource("http://localhost:5000/progress");
+        const toastId = "progressToast"; // Fixed ID for updating
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.progress) {
+                // Dismiss the initializing toast
+                toast.dismiss(initializingToastId);
+
+                if (!toast.isActive(toastId)) {
+                    toast.info(`Download Progress: ${data.progress}%`, {
+                        autoClose: false,
+                        toastId: toastId,
+                    });
+                } else {
+                    toast.update(toastId, {
+                        render: `Download Progress: ${data.progress}%`,
+                        autoClose: false,
+                    });
+                }
+
+                // ✅ Close progress toast and show success toast on completion
+                if (data.progress >= 100 || data.status === "completed") {
+                    toast.update(toastId, {
+                        render: "Download Completed! 🎉",
+                        type: "success", // ✅ Correct usage
+                        autoClose: 3000,
+                    });
+
+                    setTimeout(() => {
+                        toast.dismiss(toastId); // Ensure toast is removed
+                    }, 500);
+
+                    eventSource.close(); // Stop listening for updates
+                }
+            }
+        };
+
+        eventSource.onerror = () => {
+            console.log("EventSource closed or errored.");
+            eventSource.close();
+        };
+    };
+
     const handleDownload = async () => {
         if (!isValidYoutubeUrl(url.trim())) {
             toast.error("Please enter a valid YouTube URL!");
@@ -28,6 +74,8 @@ function YouTube() {
         }
 
         setLoading(true);
+        const initializingToastId = toast.info("Initializing...", { autoClose: false });
+        listenForProgress(initializingToastId); // Start listening for progress
 
         try {
             const response = await axios.post(
@@ -40,32 +88,28 @@ function YouTube() {
             const contentDisposition = response.headers["content-disposition"];
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="?([^";]+)"?/);
-                if (match && match[1]) {
-                    fileName = decodeURIComponent(match[1]);
-                }
+                if (match && match[1]) fileName = decodeURIComponent(match[1]);
             }
 
             const blob = new Blob([response.data], {
                 type: downloadType === "audio" ? "audio/mpeg" : "video/mp4",
             });
             const downloadUrl = URL.createObjectURL(blob);
-
             const link = document.createElement("a");
             link.href = downloadUrl;
             link.setAttribute("download", fileName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
             URL.revokeObjectURL(downloadUrl);
+
             toast.success("Download Started!");
         } catch (error) {
-            const errorMessage =
-                error.response?.data?.error || "Download failed. Please check the URL and try again.";
-            toast.error(errorMessage);
+            console.error(error);
+            toast.error("Download failed. Please check the URL and try again.");
+        } finally {
+            setLoading(false);
         }
-
-        setTimeout(() => setLoading(false), 1000);
     };
 
     const pasteFromClipboard = async () => {
@@ -76,7 +120,7 @@ function YouTube() {
                 return;
             }
             setUrl(text);
-            toast.success("Link pasted from clipboard!");
+            // toast.success("Link pasted from clipboard!");
         } catch (err) {
             toast.error("Failed to access clipboard. Please allow permissions.");
         }

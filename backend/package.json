@@ -15,8 +15,10 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-sse": "^0.5.3",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
+    "progress-stream": "^2.0.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "ytdl-core": "^4.11.5"
